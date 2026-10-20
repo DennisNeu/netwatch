@@ -24,18 +24,7 @@ func main() {
 
 	wg := new(sync.WaitGroup)
 
-	// Slice of structs
-	servicesJSON, err := os.ReadFile("services.json")
-	if err != nil {
-		fmt.Println("This error occured while trying to read the json file:", err)
-		return
-	}
-
-	// json.Unmarshal returns an error, data is saved not my assignment but by passing a pointer!
-	if err := json.Unmarshal(servicesJSON, &services); err != nil {
-		fmt.Println("This error occured while translating json to go objects:", err)
-		return
-	}
+	GetJSONData("services.json", &services)
 
 	for _, service := range services {
 		wg.Add(1)
@@ -73,4 +62,18 @@ func getStatusCode(client *http.Client, url string) int {
 	defer resp.Body.Close() // Close connection to save sys resources
 
 	return resp.StatusCode
+}
+
+func GetJSONData(filepath string, s *[]Service) {
+	servicesJSON, err := os.ReadFile(filepath)
+	if err != nil {
+		fmt.Println("This error occured while trying to read the json file:", err)
+		return
+	}
+
+	// json.Unmarshal returns an error, data is saved not my assignment but by passing a pointer!
+	if err := json.Unmarshal(servicesJSON, &s); err != nil {
+		fmt.Println("This error occured while translating json to go objects:", err)
+		return
+	}
 }
