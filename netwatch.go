@@ -31,17 +31,17 @@ func main() {
 
 		go func(service Service, wg *sync.WaitGroup) {
 			defer wg.Done()
-			statusCode := getStatusCode(client, service.Url)
+			statusCode, responseTime := getStatusCode(client, service.Url)
 			fmt.Println("Result for:", service.Name)
 			switch {
 			case statusCode == 200:
-				fmt.Println(statusCode, "- Service is up and healthy!")
+				fmt.Println(statusCode, "- Service is up and healthy! Response time:", responseTime.Milliseconds(), "ms")
 			case statusCode == 401 || statusCode == 403:
-				fmt.Println(statusCode, "- Client isn't authorized")
+				fmt.Println(statusCode, "- Client isn't authorized. Response time:", responseTime.Milliseconds(), "ms")
 			case statusCode == 404:
-				fmt.Println(statusCode, "- Resource not found")
+				fmt.Println(statusCode, "- Resource not found. Response time:", responseTime.Milliseconds(), "ms")
 			case statusCode >= 500 && statusCode <= 599:
-				fmt.Println(statusCode, "- Server-side error")
+				fmt.Println(statusCode, "- Server-side error.  Response time:", responseTime.Milliseconds(), "ms")
 			case statusCode == 0:
 				fmt.Println("No HTTP response")
 			default:
@@ -52,19 +52,25 @@ func main() {
 	wg.Wait()
 }
 
-func getStatusCode(client *http.Client, url string) int {
+func getStatusCode(client *http.Client, url string) (int, time.Duration) {
+
+	start := time.Now()
 
 	resp, err := client.Get(url)
+
+	elapsed := time.Since(start)
+
 	if err != nil {
-		return 0 // In the future, adapt to provide more information on why
+		return 0, elapsed // In the future, adapt to provide more information on why
 	}
 
 	defer resp.Body.Close() // Close connection to save sys resources
 
-	return resp.StatusCode
+	return resp.StatusCode, elapsed
 }
 
 func GetJSONData(filepath string, s *[]Service) {
+
 	servicesJSON, err := os.ReadFile(filepath)
 	if err != nil {
 		fmt.Println("This error occured while trying to read the json file:", err)
